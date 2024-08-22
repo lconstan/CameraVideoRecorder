@@ -37,7 +37,7 @@ namespace CameraVideoRecorder.Ffmpeg
 
             foreach (string file in Directory.GetFiles(outputPath))
             {
-                if (file.StartsWith(OutputFileName))
+                if (Path.GetFileName(file).StartsWith(OutputFileName))
                 {
                     File.Delete(file);
                 }
