@@ -1,25 +1,26 @@
 ﻿
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Specialized;
-using CameraVideoRecorder.OutputFile;
+using CameraVideoRecorder.Arguments;
 using System.IO.Compression;
 
 namespace CameraVideoRecorder.AzureIntegration
 {
     internal class VideoStorer : IVideoStorer
     {
-        private readonly IOutputFileRepository _outputFileRepository;
+        private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly BlobServiceClient _blobServiceClient;
 
-        public VideoStorer(IOutputFileRepository outputFileRepository, BlobServiceClient blobServiceClient)
+        public VideoStorer(ICameraRecorderArgumentProvider argumentProvider, BlobServiceClient blobServiceClient)
         {
-            _outputFileRepository = outputFileRepository;
+            _argumentProvider = argumentProvider;
             _blobServiceClient = blobServiceClient;
         }
 
         public async Task PushToAzureAsync(CancellationToken ct)
         {
-            string lastFilePath = _outputFileRepository.GetLastFilePath();
+            string outputPath = _argumentProvider.Arguments[ArgumentConstants.OutputPath];
+            string lastFilePath = Directory.GetFiles(outputPath).Single();
+
             string zippedFilePath = lastFilePath.Replace(Path.GetExtension(lastFilePath), ".zip");
 
             BlobContainerClient blobContainerClient = _blobServiceClient.GetBlobContainerClient("videorecordercontainer");

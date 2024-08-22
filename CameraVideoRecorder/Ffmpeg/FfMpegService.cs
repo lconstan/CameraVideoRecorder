@@ -1,7 +1,6 @@
 ﻿
 using CameraVideoRecorder.Arguments;
 using CameraVideoRecorder.AzureIntegration;
-using CameraVideoRecorder.OutputFile;
 using System.Diagnostics;
 
 namespace CameraVideoRecorder.Ffmpeg
@@ -10,7 +9,6 @@ namespace CameraVideoRecorder.Ffmpeg
     {
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly ISecretProvider _secretProvider;
-        private readonly IOutputFileRepository _outputFileRepository;
         private Process _process;
 
         private const string OutputFileName = "output_file_";
@@ -18,12 +16,10 @@ namespace CameraVideoRecorder.Ffmpeg
         private const string FfmpegExeName = "ffmpeg.exe";
 
         public FfMpegService(ICameraRecorderArgumentProvider argumentProvider, 
-            ISecretProvider secretProvider,
-            IOutputFileRepository outputFileRepository)
+            ISecretProvider secretProvider)
         {
             _argumentProvider = argumentProvider;
             _secretProvider = secretProvider;
-            _outputFileRepository = outputFileRepository;
         }
 
         public async Task StartRecordingAsync(CancellationToken token)
@@ -36,17 +32,16 @@ namespace CameraVideoRecorder.Ffmpeg
             string outputPath = _argumentProvider.Arguments[ArgumentConstants.OutputPath];
             string outputFile = Path.Combine(outputPath, OutputFileName + DateTime.UtcNow.ToString("yyyy_mm_dd_HH_mm_ss") + OutputFileExtension);
 
-            string lastFile = _outputFileRepository.GetLastFilePath();
-
             string cameraLogin = await _secretProvider.GetSecretAsync(SecretType.CameraLogin);
             string cameraPassword = await _secretProvider.GetSecretAsync(SecretType.CameraPassword);
 
-            if (lastFile != null)
+            foreach (string file in Directory.GetFiles(outputPath))
             {
-                File.Delete(lastFile);
+                if (file.StartsWith(OutputFileName))
+                {
+                    File.Delete(file);
+                }
             }
-
-            _outputFileRepository.StoreFilePath(outputFile);
 
             ProcessStartInfo processStartInfo = new ProcessStartInfo()
             {

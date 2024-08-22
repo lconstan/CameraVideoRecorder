@@ -6,7 +6,6 @@ using CameraVideoRecorder.Recording;
 using CameraVideoRecorder.Ffmpeg;
 using Azure.Identity;
 using Azure.Storage.Blobs;
-using CameraVideoRecorder.OutputFile;
 using CameraVideoRecorder.AzureIntegration;
 using Azure.Security.KeyVault.Secrets;
 
@@ -15,7 +14,6 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddSingleton<ICameraRecorderArgumentProvider, CameraRecorderArgumentProvider>();
 builder.Services.AddSingleton<ICameraIpPinger, CameraIpPinger>();
 builder.Services.AddSingleton<IFfmpegService, FfMpegService>();
-builder.Services.AddSingleton<IOutputFileRepository, OutputFileRepository>();
 builder.Services.AddSingleton<IVideoStorer, VideoStorer>();
 builder.Services.AddSingleton<ISecretProvider, SecretProvider>();
 
