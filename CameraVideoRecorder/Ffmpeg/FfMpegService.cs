@@ -26,7 +26,7 @@ namespace CameraVideoRecorder.Ffmpeg
             _outputFileRepository = outputFileRepository;
         }
 
-        public async Task StartRecordingAsync()
+        public async Task StartRecordingAsync(CancellationToken token)
         {
             string ipAddress = _argumentProvider.Arguments[ArgumentConstants.CameraIpAddress];
 
@@ -57,7 +57,7 @@ namespace CameraVideoRecorder.Ffmpeg
 
             _process = Process.Start(processStartInfo);
 
-            await Task.Delay(2_000);
+            await Task.Delay(2_000, token);
 
             if (_process.HasExited)
             {
@@ -65,7 +65,7 @@ namespace CameraVideoRecorder.Ffmpeg
             }
         }
 
-        public async Task StopRecordingAsync()
+        public async Task StopRecordingAsync(CancellationToken ct)
         {
             if (_process == null || _process.HasExited)
             {
@@ -80,7 +80,7 @@ namespace CameraVideoRecorder.Ffmpeg
                 }
             }
 
-            await Task.Delay(2_000);
+            await Task.Delay(2_000, ct);
 
             if (!_process.HasExited)
             {

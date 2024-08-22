@@ -2,6 +2,6 @@
 {
     internal interface IVideoStorer
     {
-        Task PushToAzureAsync();
+        Task PushToAzureAsync(CancellationToken stoppingToken);
     }
 }

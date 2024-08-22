@@ -7,15 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace CameraVideoRecorder.Recording
 {
-    internal class CameraRecorderHostedService : IHostedService
+    internal class CameraRecorderHostedService : BackgroundService
     {
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly ICameraIpPinger _cameraIpPinger;
         private readonly IFfmpegService _ffmpegService;
         private readonly IVideoStorer _videoStorer;
         private readonly ILogger<CameraRecorderHostedService> _logger;
-
-        private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         public CameraRecorderHostedService(ICameraRecorderArgumentProvider argumentProvider,
             ICameraIpPinger cameraIpPinger,
@@ -30,7 +28,18 @@ namespace CameraVideoRecorder.Recording
             _logger = logger;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        private static TimeSpan GetDelay()
+        {
+            var delayTimeSpan =
+#if DEBUG
+    TimeSpan.FromSeconds(10);
+#else
+                TimeSpan.FromHours(1);
+#endif
+            return delayTimeSpan;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Starting...");
 
@@ -44,37 +53,15 @@ namespace CameraVideoRecorder.Recording
 
             TimeSpan delayTimeSpan = GetDelay();
 
-            Task.Run(async () =>
+            while (!stoppingToken.IsCancellationRequested)
             {
-                while (!_cancellationTokenSource.IsCancellationRequested)
-                {
-                    await _ffmpegService.StartRecordingAsync();
+                await _ffmpegService.StartRecordingAsync(stoppingToken);
 
-                    await Task.Delay(delayTimeSpan, _cancellationTokenSource.Token);
+                await Task.Delay(delayTimeSpan, stoppingToken);
 
-                    await _ffmpegService.StopRecordingAsync();
-                    await _videoStorer.PushToAzureAsync();
-                }
-            });
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            _cancellationTokenSource.Cancel();
-
-            await _ffmpegService.StopRecordingAsync();
-            await _videoStorer.PushToAzureAsync();
-        }
-
-        private static TimeSpan GetDelay()
-        {
-            var delayTimeSpan =
-#if DEBUG
-    TimeSpan.FromSeconds(10);
-#else
-                TimeSpan.FromHours(1);
-#endif
-            return delayTimeSpan;
+                await _ffmpegService.StopRecordingAsync(stoppingToken);
+                await _videoStorer.PushToAzureAsync(stoppingToken);
+            }
         }
     }
 }

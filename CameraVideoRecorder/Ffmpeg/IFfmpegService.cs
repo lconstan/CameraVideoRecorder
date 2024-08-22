@@ -2,8 +2,8 @@
 {
     internal interface IFfmpegService
     {
-        Task StartRecordingAsync();
+        Task StartRecordingAsync(CancellationToken stoppingToken);
 
-        Task StopRecordingAsync();
+        Task StopRecordingAsync(CancellationToken stoppingToken);
     }
 }

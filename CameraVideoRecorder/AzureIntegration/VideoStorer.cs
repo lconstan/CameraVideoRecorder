@@ -15,14 +15,14 @@ namespace CameraVideoRecorder.AzureIntegration
             _blobServiceClient = blobServiceClient;
         }
 
-        public async Task PushToAzureAsync()
+        public async Task PushToAzureAsync(CancellationToken ct)
         {
             string lastFilePath = _outputFileRepository.GetLastFilePath();
 
             BlobContainerClient blobContainerClient = _blobServiceClient.GetBlobContainerClient("videorecordercontainer");
             BlobClient blobClient = blobContainerClient.GetBlobClient(lastFilePath);
 
-            await blobClient.UploadAsync(lastFilePath, true);
+            await blobClient.UploadAsync(lastFilePath, true, ct);
         }
     }
 }
