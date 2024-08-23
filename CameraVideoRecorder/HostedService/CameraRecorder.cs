@@ -48,19 +48,31 @@ namespace CameraVideoRecorder.Recording
             if (!_cameraIpPinger.CanPingCamera())
             {
                 _logger.LogInformation("Unable to ping camera");
-                return;
+                Environment.Exit(0);
             }
 
             TimeSpan delayTimeSpan = GetDelay();
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                await _ffmpegService.StartRecordingAsync(stoppingToken);
+                try
+                {
+                    bool started = false;
+                    while (!started)
+                    {
+                        started = await _ffmpegService.StartRecordingAsync(stoppingToken);
+                    }
 
-                await Task.Delay(delayTimeSpan, stoppingToken);
+                    await Task.Delay(delayTimeSpan, stoppingToken);
 
-                await _ffmpegService.StopRecordingAsync(stoppingToken);
-                await _videoStorer.PushToAzureAsync(stoppingToken);
+                    await _ffmpegService.StopRecordingAsync(stoppingToken);
+                }
+                catch (Exception ex) 
+                {
+                    _logger.LogError(ex, "Error while recording");
+
+                    await _videoStorer.PushToAzureAsync(stoppingToken);
+                }
             }
         }
     }

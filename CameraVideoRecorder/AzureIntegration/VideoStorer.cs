@@ -1,6 +1,7 @@
 ﻿
 using Azure.Storage.Blobs;
 using CameraVideoRecorder.Arguments;
+using Microsoft.Extensions.Logging;
 using System.IO.Compression;
 
 namespace CameraVideoRecorder.AzureIntegration
@@ -9,17 +10,27 @@ namespace CameraVideoRecorder.AzureIntegration
     {
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly BlobServiceClient _blobServiceClient;
+        private readonly ILogger<VideoStorer> _logger;
 
-        public VideoStorer(ICameraRecorderArgumentProvider argumentProvider, BlobServiceClient blobServiceClient)
+        public VideoStorer(ICameraRecorderArgumentProvider argumentProvider, BlobServiceClient blobServiceClient, ILogger<VideoStorer> logger)
         {
             _argumentProvider = argumentProvider;
             _blobServiceClient = blobServiceClient;
+            _logger = logger;
         }
 
         public async Task PushToAzureAsync(CancellationToken ct)
         {
+            _logger.LogInformation("Pushing to azure...");
+
             string outputPath = _argumentProvider.Arguments[ArgumentConstants.OutputPath];
-            string lastFilePath = Directory.GetFiles(outputPath).Single();
+            string lastFilePath = Directory.GetFiles(outputPath).SingleOrDefault();
+
+            if (lastFilePath == null)
+            {
+                _logger.LogInformation("No files to push");
+                return;
+            }
 
             string zippedFilePath = lastFilePath.Replace(Path.GetExtension(lastFilePath), ".zip");
 
@@ -40,6 +51,8 @@ namespace CameraVideoRecorder.AzureIntegration
                     }
                 }
             }
+
+            _logger.LogInformation("Pushed to azure");
         }
     }
 }

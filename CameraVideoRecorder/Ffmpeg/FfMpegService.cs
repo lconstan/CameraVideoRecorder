@@ -1,6 +1,7 @@
 ﻿
 using CameraVideoRecorder.Arguments;
 using CameraVideoRecorder.AzureIntegration;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 namespace CameraVideoRecorder.Ffmpeg
@@ -9,20 +10,23 @@ namespace CameraVideoRecorder.Ffmpeg
     {
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly ISecretProvider _secretProvider;
+        private readonly ILogger<FfMpegService> _logger;
         private Process _process;
 
         private const string OutputFileName = "output_file_";
-        private const string OutputFileExtension = ".mp4";
+        private const string OutputFileExtension = ".ts";
         private const string FfmpegExeName = "ffmpeg.exe";
 
-        public FfMpegService(ICameraRecorderArgumentProvider argumentProvider, 
-            ISecretProvider secretProvider)
+        public FfMpegService(ICameraRecorderArgumentProvider argumentProvider,
+            ISecretProvider secretProvider,
+            ILogger<FfMpegService> logger)
         {
             _argumentProvider = argumentProvider;
             _secretProvider = secretProvider;
+            _logger = logger;
         }
 
-        public async Task StartRecordingAsync(CancellationToken token)
+        public async Task<bool> StartRecordingAsync(CancellationToken token)
         {
             string ipAddress = _argumentProvider.Arguments[ArgumentConstants.CameraIpAddress];
 
@@ -46,7 +50,7 @@ namespace CameraVideoRecorder.Ffmpeg
             ProcessStartInfo processStartInfo = new ProcessStartInfo()
             {
                 FileName = inputFile,
-                Arguments = $"-i rtsp://{cameraLogin}:{cameraPassword}@{ipAddress}/live0 -c copy {outputFile}",
+                Arguments = $"-i rtsp://{cameraLogin}:{cameraPassword}@{ipAddress}/live0 -c copy -f mpegts {outputFile}",
                 RedirectStandardInput = true
             };
 
@@ -54,10 +58,7 @@ namespace CameraVideoRecorder.Ffmpeg
 
             await Task.Delay(2_000, token);
 
-            if (_process.HasExited)
-            {
-                throw new InvalidOperationException("Unable to start ffmpeg");
-            }
+            return !_process.HasExited;
         }
 
         public async Task StopRecordingAsync(CancellationToken ct)
@@ -79,7 +80,15 @@ namespace CameraVideoRecorder.Ffmpeg
 
             if (!_process.HasExited)
             {
-                throw new InvalidOperationException("Unable to stop ffmpeg");
+                _logger.LogInformation("Killing process, camera seems offline");
+                _process.Kill();
+
+                await Task.Delay(2_000, ct);
+
+                if (!_process.HasExited)
+                {
+                    throw new InvalidOperationException("Unable to stop ffmpeg");
+                }
             }
 
             _process.Dispose();
