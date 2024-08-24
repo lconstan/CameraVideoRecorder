@@ -4,6 +4,7 @@ using CameraVideoRecorder.Camera;
 using CameraVideoRecorder.Ffmpeg;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace CameraVideoRecorder.Recording
 {
@@ -34,7 +35,7 @@ namespace CameraVideoRecorder.Recording
 #if DEBUG
     TimeSpan.FromSeconds(10);
 #else
-                TimeSpan.FromHours(1);
+                TimeSpan.FromHours(4);
 #endif
             return delayTimeSpan;
         }
@@ -55,23 +56,26 @@ namespace CameraVideoRecorder.Recording
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                Process p = null;
+
                 try
                 {
-                    bool started = false;
-                    while (!started)
+                    while (p == null)
                     {
-                        started = await _ffmpegService.StartRecordingAsync(stoppingToken);
+                        p = await _ffmpegService.StartRecordingAsync(stoppingToken);
                     }
+
+                    _videoStorer.PushToAzureAsync(p, stoppingToken);
 
                     await Task.Delay(delayTimeSpan, stoppingToken);
 
-                    await _ffmpegService.StopRecordingAsync(stoppingToken);
+                    await _ffmpegService.StopRecordingAsync(p, stoppingToken);
                 }
-                catch (Exception ex) 
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error while recording");
-
-                    await _videoStorer.PushToAzureAsync(stoppingToken);
+                    p?.Kill();
+                    p?.Dispose();
                 }
             }
         }

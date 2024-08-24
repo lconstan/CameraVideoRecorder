@@ -1,9 +1,11 @@
-﻿namespace CameraVideoRecorder.Ffmpeg
+﻿using System.Diagnostics;
+
+namespace CameraVideoRecorder.Ffmpeg
 {
     internal interface IFfmpegService
     {
-        Task<bool> StartRecordingAsync(CancellationToken stoppingToken);
+        Task<Process> StartRecordingAsync(CancellationToken stoppingToken);
 
-        Task StopRecordingAsync(CancellationToken stoppingToken);
+        Task StopRecordingAsync(Process p, CancellationToken stoppingToken);
     }
 }

@@ -1,7 +1,9 @@
-﻿namespace CameraVideoRecorder.AzureIntegration
+﻿using System.Diagnostics;
+
+namespace CameraVideoRecorder.AzureIntegration
 {
     internal interface IVideoStorer
     {
-        Task PushToAzureAsync(CancellationToken stoppingToken);
+        Task PushToAzureAsync(Process p, CancellationToken stoppingToken);
     }
 }

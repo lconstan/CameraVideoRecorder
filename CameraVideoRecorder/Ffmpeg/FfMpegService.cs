@@ -1,5 +1,4 @@
-﻿
-using CameraVideoRecorder.Arguments;
+﻿using CameraVideoRecorder.Arguments;
 using CameraVideoRecorder.AzureIntegration;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -11,7 +10,6 @@ namespace CameraVideoRecorder.Ffmpeg
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly ISecretProvider _secretProvider;
         private readonly ILogger<FfMpegService> _logger;
-        private Process _process;
 
         private const string OutputFileName = "output_file_";
         private const string OutputFileExtension = ".ts";
@@ -26,49 +24,35 @@ namespace CameraVideoRecorder.Ffmpeg
             _logger = logger;
         }
 
-        public async Task<bool> StartRecordingAsync(CancellationToken token)
+        public async Task<Process> StartRecordingAsync(CancellationToken token)
         {
             string ipAddress = _argumentProvider.Arguments[ArgumentConstants.CameraIpAddress];
 
             string inputPath = _argumentProvider.Arguments[ArgumentConstants.FfmpegDirectoryPath];
             string inputFile = Path.Combine(inputPath, FfmpegExeName);
 
-            string outputPath = _argumentProvider.Arguments[ArgumentConstants.OutputPath];
-            string outputFile = Path.Combine(outputPath, OutputFileName + DateTime.UtcNow.ToString("yyyy_mm_dd_HH_mm_ss") + OutputFileExtension);
-
             string cameraLogin = await _secretProvider.GetSecretAsync(SecretType.CameraLogin);
             string cameraPassword = await _secretProvider.GetSecretAsync(SecretType.CameraPassword);
-
-            foreach (string file in Directory.GetFiles(outputPath))
-            {
-                if (Path.GetFileName(file).StartsWith(OutputFileName))
-                {
-                    File.Delete(file);
-                }
-            }
 
             ProcessStartInfo processStartInfo = new ProcessStartInfo()
             {
                 FileName = inputFile,
-                Arguments = $"-i rtsp://{cameraLogin}:{cameraPassword}@{ipAddress}/live0 -c copy -f mpegts {outputFile}",
-                RedirectStandardInput = true
+                Arguments = $"-i rtsp://{cameraLogin}:{cameraPassword}@{ipAddress}/live0 -f mpegts pipe:1",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true
             };
 
-            _process = Process.Start(processStartInfo);
-
-            await Task.Delay(2_000, token);
-
-            return !_process.HasExited;
+            return Process.Start(processStartInfo);
         }
 
-        public async Task StopRecordingAsync(CancellationToken ct)
+        public async Task StopRecordingAsync(Process process, CancellationToken ct)
         {
-            if (_process == null || _process.HasExited)
+            if (process == null || process.HasExited)
             {
                 return;
             }
 
-            using (StreamWriter sw = _process.StandardInput)
+            using (StreamWriter sw = process.StandardInput)
             {
                 if (sw.BaseStream.CanWrite)
                 {
@@ -78,20 +62,20 @@ namespace CameraVideoRecorder.Ffmpeg
 
             await Task.Delay(2_000, ct);
 
-            if (!_process.HasExited)
+            if (!process.HasExited)
             {
                 _logger.LogInformation("Killing process, camera seems offline");
-                _process.Kill();
+                process.Kill();
 
                 await Task.Delay(2_000, ct);
 
-                if (!_process.HasExited)
+                if (!process.HasExited)
                 {
                     throw new InvalidOperationException("Unable to stop ffmpeg");
                 }
             }
 
-            _process.Dispose();
+            process.Dispose();
         }
     }
 }

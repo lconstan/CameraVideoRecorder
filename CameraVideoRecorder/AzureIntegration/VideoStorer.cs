@@ -2,7 +2,9 @@
 using Azure.Storage.Blobs;
 using CameraVideoRecorder.Arguments;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.IO.Compression;
+using System.Reflection.Metadata;
 
 namespace CameraVideoRecorder.AzureIntegration
 {
@@ -19,40 +21,14 @@ namespace CameraVideoRecorder.AzureIntegration
             _logger = logger;
         }
 
-        public async Task PushToAzureAsync(CancellationToken ct)
+        public Task PushToAzureAsync(Process p, CancellationToken ct)
         {
             _logger.LogInformation("Pushing to azure...");
 
-            string outputPath = _argumentProvider.Arguments[ArgumentConstants.OutputPath];
-            string lastFilePath = Directory.GetFiles(outputPath).SingleOrDefault();
-
-            if (lastFilePath == null)
-            {
-                _logger.LogInformation("No files to push");
-                return;
-            }
-
-            string zippedFilePath = lastFilePath.Replace(Path.GetExtension(lastFilePath), ".zip");
-
             BlobContainerClient blobContainerClient = _blobServiceClient.GetBlobContainerClient("videorecordercontainer");
-            BlobClient blobClient = blobContainerClient.GetBlobClient(Path.GetFileName(zippedFilePath));
+            BlobClient blobClient = blobContainerClient.GetBlobClient(Path.GetFileName($"video_{DateTime.UtcNow.ToString("yyyy_mm_dd_HH_mm_ss")}.ts"));
 
-            using (Stream stream = await blobClient.OpenWriteAsync(true))
-            {
-                using (ZipArchive zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: false))
-                {
-                    using (var fileStream = File.OpenRead(lastFilePath))
-                    {
-                        var entry = zip.CreateEntry(Path.GetFileName(lastFilePath), CompressionLevel.Optimal);
-                        using (var innerFile = entry.Open())
-                        {
-                            await fileStream.CopyToAsync(innerFile);
-                        }
-                    }
-                }
-            }
-
-            _logger.LogInformation("Pushed to azure");
+            return blobClient.UploadAsync(p.StandardOutput.BaseStream, true, ct);
         }
     }
 }
