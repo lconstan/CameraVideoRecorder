@@ -29,17 +29,6 @@ namespace CameraVideoRecorder.Recording
             _logger = logger;
         }
 
-        private static TimeSpan GetDelay()
-        {
-            var delayTimeSpan =
-#if DEBUG
-    TimeSpan.FromSeconds(10);
-#else
-                TimeSpan.FromHours(4);
-#endif
-            return delayTimeSpan;
-        }
-
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Starting...");
@@ -52,30 +41,20 @@ namespace CameraVideoRecorder.Recording
                 Environment.Exit(0);
             }
 
-            TimeSpan delayTimeSpan = GetDelay();
-
             while (!stoppingToken.IsCancellationRequested)
             {
-                Process p = null;
+                Process ffmpegProcess = null;
 
                 try
                 {
-                    while (p == null)
-                    {
-                        p = await _ffmpegService.StartRecordingAsync(stoppingToken);
-                    }
+                    ffmpegProcess = await _ffmpegService.StartRecordingAsync(stoppingToken);
 
-                    _videoStorer.PushToAzureAsync(p, stoppingToken);
-
-                    await Task.Delay(delayTimeSpan, stoppingToken);
-
-                    await _ffmpegService.StopRecordingAsync(p, stoppingToken);
+                    await _videoStorer.PushToAzureAsync(ffmpegProcess.StandardOutput.BaseStream, stoppingToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error while recording");
-                    p?.Kill();
-                    p?.Dispose();
+                    await _ffmpegService.StopRecordingAsync(ffmpegProcess, stoppingToken);
                 }
             }
         }
