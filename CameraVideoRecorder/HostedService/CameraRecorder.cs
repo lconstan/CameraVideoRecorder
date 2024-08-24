@@ -6,6 +6,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
+[assembly: Fody.ConfigureAwait(false)]
+
 namespace CameraVideoRecorder.Recording
 {
     internal class CameraRecorderHostedService : BackgroundService
