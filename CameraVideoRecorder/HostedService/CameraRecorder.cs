@@ -54,6 +54,9 @@ namespace CameraVideoRecorder.Recording
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error while recording");
+                }
+                finally
+                {
                     await _ffmpegService.StopRecordingAsync(ffmpegProcess, stoppingToken);
                 }
             }

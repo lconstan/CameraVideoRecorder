@@ -10,7 +10,8 @@ namespace CameraVideoRecorder.AzureIntegration
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly BlobServiceClient _blobServiceClient;
         private readonly ILogger<VideoStorer> _logger;
-        private readonly TimeSpan _azureStorePeriod = TimeSpan.FromSeconds(10);
+
+        private static readonly TimeSpan _azureStorePeriod = TimeSpan.FromSeconds(10);
 
         public VideoStorer(ICameraRecorderArgumentProvider argumentProvider, BlobServiceClient blobServiceClient, ILogger<VideoStorer> logger)
         {
@@ -21,39 +22,59 @@ namespace CameraVideoRecorder.AzureIntegration
 
         public async Task PushToAzureAsync(Stream stream, CancellationToken ct)
         {
-            _logger.LogInformation("Pushing to azure...");
-
-            AppendBlobClient blobClient = await CreateNewBlobAsync(ct);
-            
             using var memoryStream = new MemoryStream();
             byte[] buffer = new byte[80 * 1024]; // 80 KB buffer
             int bytesRead;
             DateTime lastWriteUtc = DateTime.UtcNow;
 
-            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+            AppendBlobClient blobClient = null;
+
+            while ((bytesRead = await ReadStreamWithTimeoutAsync(stream, buffer, ct)) > 0)
             {
+                if (blobClient == null || lastWriteUtc.Day != DateTime.UtcNow.Day)
+                {
+                    blobClient = await CreateNewBlobAsync(ct);
+                }
+
                 await memoryStream.WriteAsync(buffer, 0, bytesRead, ct);
 
                 if (DateTime.UtcNow - lastWriteUtc > _azureStorePeriod)
                 {
-                    if (lastWriteUtc.Day != DateTime.UtcNow.Day)
-                    {
-                        blobClient = await CreateNewBlobAsync(ct);
-                    }
-
                     await PushToAzureAsync(blobClient, memoryStream, ct);
 
                     lastWriteUtc = DateTime.UtcNow;
                 }
             }
 
+            _logger.LogInformation("Finishing video storing");
+
             // Upload any remaining data in the memory stream
             if (memoryStream.Length > 0)
             {
                 await PushToAzureAsync(blobClient, memoryStream, ct);
             }
+        }
 
-            _logger.LogInformation("Upload completed successfully.");
+        private static async Task<int> ReadStreamWithTimeoutAsync(Stream stream, byte[] buffer, CancellationToken ct)
+        {
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(_azureStorePeriod);
+
+            try
+            {
+                return await stream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return 0;
+            }
+        }
+
+        private async Task PushToAzureAsync(AppendBlobClient blobClient, MemoryStream memoryStream, CancellationToken ct)
+        {
+            memoryStream.Position = 0; // Reset stream to the beginning
+            await blobClient.AppendBlockAsync(memoryStream, cancellationToken: ct);
+            memoryStream.SetLength(0); // Clear the stream after upload
         }
 
         private async Task<AppendBlobClient> CreateNewBlobAsync(CancellationToken ct)
@@ -66,18 +87,12 @@ namespace CameraVideoRecorder.AzureIntegration
 
             if (!await blobClient.ExistsAsync(ct))
             {
-                _logger.LogInformation("Creating a new append blob...");
+                _logger.LogInformation("Creating a new append blob {name}", blobName);
                 await blobClient.CreateAsync(cancellationToken: ct);
             }
 
             return blobClient;
         }
 
-        private static async Task PushToAzureAsync(AppendBlobClient blobClient, MemoryStream memoryStream, CancellationToken ct)
-        {
-            memoryStream.Position = 0; // Reset stream to the beginning
-            await blobClient.AppendBlockAsync(memoryStream, cancellationToken: ct);
-            memoryStream.SetLength(0); // Clear the stream after upload
-        }
     }
 }
