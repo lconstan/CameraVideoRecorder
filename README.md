@@ -1,5 +1,7 @@
 # CameraVideoRecorder
 
+A small project to capture an RSTP stream from a security camera and push the video to Azure.
+
 ## Push to raspberry
  
 From the raspberry:
