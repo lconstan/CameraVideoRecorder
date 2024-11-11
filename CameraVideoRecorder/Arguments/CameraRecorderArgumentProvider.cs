@@ -1,16 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace CameraVideoRecorder.Arguments
+﻿namespace CameraVideoRecorder.Arguments
 {
     internal class CameraRecorderArgumentProvider : ICameraRecorderArgumentProvider
     {
-        private readonly ILogger<CameraRecorderArgumentProvider> _logger;
-
         public Dictionary<string, string> Arguments { get; } = new Dictionary<string, string>();
 
-        public CameraRecorderArgumentProvider(ILogger<CameraRecorderArgumentProvider> logger)
+        public CameraRecorderArgumentProvider()
         {
-            _logger = logger;
         }
 
         public void ParseArguments()
@@ -26,8 +21,6 @@ namespace CameraVideoRecorder.Arguments
                     string key = parts[0];
                     string value = parts[1];
                     Arguments[key] = value;
-
-                    _logger.LogInformation($"Parsed {key} - {value}");
                 }
                 else
                 {

@@ -5,10 +5,15 @@ A small project to capture an RSTP stream from a security camera and push the vi
 ## Push to raspberry
  
 From the raspberry:
-	* sudo raspi-config
-	* Interfacing Options > SSH > Enable
-	* Find the IP: `hostname -I` (mind the capital letter)
+
+1. sudo raspi-config
+1. Interfacing Options > SSH > Enable
+1. Find the IP: `hostname -I` (mind the capital letter)
 	
 Push to rasberry pi from windows:
 `scp -r [folder] [login]@[ip]:[path_on_raspberry]`
 
+Example:
+
+1. Build the project: `dotnet publish`
+1. Copy to the raspberry: `scp -r publish [login]@[ip]:/home/admin/camerarecorder

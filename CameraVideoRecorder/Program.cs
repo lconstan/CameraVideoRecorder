@@ -8,10 +8,16 @@ using Azure.Identity;
 using Azure.Storage.Blobs;
 using CameraVideoRecorder.AzureIntegration;
 using Azure.Security.KeyVault.Secrets;
+using Serilog;
+using Microsoft.Extensions.Logging;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddSingleton<ICameraRecorderArgumentProvider, CameraRecorderArgumentProvider>();
+var argumentProvider = new CameraRecorderArgumentProvider();
+argumentProvider.ParseArguments();
+
+builder.Services.AddSingleton<ICameraRecorderArgumentProvider>(argumentProvider);
+
 builder.Services.AddSingleton<ICameraIpPinger, CameraIpPinger>();
 builder.Services.AddSingleton<IFfmpegService, FfMpegService>();
 builder.Services.AddSingleton<IVideoStorer, VideoStorer>();
@@ -23,6 +29,14 @@ builder.Services.AddSingleton(_ => new BlobServiceClient(new Uri("https://videor
 builder.Services.AddSingleton(_ => new SecretClient(new Uri("https://videorecorderkv.vault.azure.net/"), new DefaultAzureCredential()));
 
 builder.Services.AddHostedService<CameraRecorderHostedService>();
+
+string fullPath = $"{argumentProvider.Arguments[ArgumentConstants.LogPath]}/log.txt";
+Log.Logger = new LoggerConfiguration().WriteTo.File(fullPath, rollingInterval: RollingInterval.Day).CreateLogger();
+builder.Services.AddLogging(x =>
+{
+    x.ClearProviders();
+    x.AddSerilog();
+});
 
 using IHost host = builder.Build();
 
