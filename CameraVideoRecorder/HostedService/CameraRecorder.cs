@@ -35,8 +35,6 @@ namespace CameraVideoRecorder.Recording
         {
             _logger.LogInformation("Starting...");
 
-            _argumentProvider.ParseArguments();
-
             if (!_cameraIpPinger.CanPingCamera())
             {
                 _logger.LogInformation("Unable to ping camera");
