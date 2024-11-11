@@ -34,7 +34,6 @@ string fullPath = $"{argumentProvider.Arguments[ArgumentConstants.LogPath]}/log.
 Log.Logger = new LoggerConfiguration().WriteTo.File(fullPath, rollingInterval: RollingInterval.Day).CreateLogger();
 builder.Services.AddLogging(x =>
 {
-    x.ClearProviders();
     x.AddSerilog();
 });
 

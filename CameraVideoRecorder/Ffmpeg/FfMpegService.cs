@@ -34,15 +34,32 @@ namespace CameraVideoRecorder.Ffmpeg
             string cameraLogin = await _secretProvider.GetSecretAsync(SecretType.CameraLogin);
             string cameraPassword = await _secretProvider.GetSecretAsync(SecretType.CameraPassword);
 
-            ProcessStartInfo processStartInfo = new ProcessStartInfo()
+            ProcessStartInfo ffmpegProcessStartInfo = new ProcessStartInfo()
             {
                 FileName = inputFile,
                 Arguments = $"-i rtsp://{cameraLogin}:{cameraPassword}@{ipAddress}/live0 -f mpegts pipe:1",
                 RedirectStandardInput = true,
-                RedirectStandardOutput = true
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
 
-            return Process.Start(processStartInfo);
+            Process? ffmpegProcess = Process.Start(ffmpegProcessStartInfo);
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            Task.Run(() =>
+            {
+                using (var reader = ffmpegProcess.StandardError)
+                {
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        _logger.LogInformation(line);
+                    }
+                }
+            }, token);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+
+            return ffmpegProcess;
         }
 
         public async Task StopRecordingAsync(Process process, CancellationToken ct)
