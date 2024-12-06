@@ -27,8 +27,6 @@
                     Arguments[arg] = null;
                 }
             }
-
-            CheckArgument(ArgumentConstants.CameraIpAddress);
         }
 
         public void CheckArgument(string argumentName)

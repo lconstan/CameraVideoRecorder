@@ -1,5 +1,6 @@
 ﻿using CameraVideoRecorder.Arguments;
 using CameraVideoRecorder.AzureIntegration;
+using CameraVideoRecorder.Camera;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
@@ -9,6 +10,7 @@ namespace CameraVideoRecorder.Ffmpeg
     {
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly ISecretProvider _secretProvider;
+        private readonly ICameraIpService _cameraIpService;
         private readonly ILogger<FfMpegService> _logger;
 
         private const string OutputFileName = "output_file_";
@@ -17,16 +19,18 @@ namespace CameraVideoRecorder.Ffmpeg
 
         public FfMpegService(ICameraRecorderArgumentProvider argumentProvider,
             ISecretProvider secretProvider,
+            ICameraIpService cameraIpService,
             ILogger<FfMpegService> logger)
         {
             _argumentProvider = argumentProvider;
             _secretProvider = secretProvider;
+            _cameraIpService = cameraIpService;
             _logger = logger;
         }
 
         public async Task<Process> StartRecordingAsync(CancellationToken token)
         {
-            string ipAddress = _argumentProvider.Arguments[ArgumentConstants.CameraIpAddress];
+            string ipAddress = _cameraIpService.GetCameraIp();
 
             string inputPath = _argumentProvider.Arguments[ArgumentConstants.FfmpegDirectoryPath];
             string inputFile = Path.Combine(inputPath, FfmpegExeName);

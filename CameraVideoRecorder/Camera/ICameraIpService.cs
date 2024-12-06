@@ -1,7 +1,9 @@
 ﻿namespace CameraVideoRecorder.Camera
 {
-    internal interface ICameraIpPinger
+    internal interface ICameraIpService
     {
         bool CanPingCamera();
+
+        string GetCameraIp();
     }
 }

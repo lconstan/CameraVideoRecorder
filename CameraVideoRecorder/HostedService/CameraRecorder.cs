@@ -13,13 +13,13 @@ namespace CameraVideoRecorder.Recording
     internal class CameraRecorderHostedService : BackgroundService
     {
         private readonly ICameraRecorderArgumentProvider _argumentProvider;
-        private readonly ICameraIpPinger _cameraIpPinger;
+        private readonly ICameraIpService _cameraIpPinger;
         private readonly IFfmpegService _ffmpegService;
         private readonly IVideoStorer _videoStorer;
         private readonly ILogger<CameraRecorderHostedService> _logger;
 
         public CameraRecorderHostedService(ICameraRecorderArgumentProvider argumentProvider,
-            ICameraIpPinger cameraIpPinger,
+            ICameraIpService cameraIpPinger,
             IFfmpegService ffmpegService,
             IVideoStorer videoStorer,
             ILogger<CameraRecorderHostedService> logger)

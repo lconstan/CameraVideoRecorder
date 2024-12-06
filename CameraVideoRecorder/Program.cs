@@ -18,7 +18,7 @@ argumentProvider.ParseArguments();
 
 builder.Services.AddSingleton<ICameraRecorderArgumentProvider>(argumentProvider);
 
-builder.Services.AddSingleton<ICameraIpPinger, CameraIpPinger>();
+builder.Services.AddSingleton<ICameraIpService, CameraIpService>();
 builder.Services.AddSingleton<IFfmpegService, FfMpegService>();
 builder.Services.AddSingleton<IVideoStorer, VideoStorer>();
 builder.Services.AddSingleton<ISecretProvider, SecretProvider>();
