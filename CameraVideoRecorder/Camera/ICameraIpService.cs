@@ -4,6 +4,6 @@
     {
         bool CanPingCamera();
 
-        string GetCameraIp();
+        string GetCameraIpAddress();
     }
 }

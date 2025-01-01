@@ -12,8 +12,6 @@ namespace CameraVideoRecorder.Camera
         private readonly ILogger<CameraIpService> _logger;
         private const string _cameraMacAddress = "04-17-b6-01-39-c5";
 
-        private string _cameraIp;
-
         public CameraIpService(ICameraRecorderArgumentProvider argumentProvider, ILogger<CameraIpService> logger)
         {
             _argumentProvider = argumentProvider;
@@ -22,11 +20,9 @@ namespace CameraVideoRecorder.Camera
 
         public bool CanPingCamera()
         {
-            _cameraIp = GetCameraIpAddress();
-
-            _logger.LogInformation("Found ip {ip}", _cameraIp);
-
-            if (string.IsNullOrEmpty(_cameraIp))
+            var cameraIp = GetCameraIpAddress();
+            
+            if (string.IsNullOrEmpty(cameraIp))
             {
                 return false;
             }
@@ -36,19 +32,27 @@ namespace CameraVideoRecorder.Camera
             using Ping _ping = new Ping();
 
             // Will throw if unable to ping
-            PingReply reply = _ping.Send(_cameraIp);
+            PingReply reply = _ping.Send(cameraIp);
 
             return reply?.Status == IPStatus.Success;
         }
 
-        private string GetCameraIpAddress()
+        public string GetCameraIpAddress()
         {
+            string cameraIp;
+            
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return GetIpAddressWindows();
+                cameraIp =  GetIpAddressWindows();
             }
+            else
+            {
+                cameraIp =  GetIpAddressLinux();
+            }
+            
+            _logger.LogInformation("Found ip {ip}", cameraIp);
 
-            return GetIpAddressLinux();
+            return cameraIp;
         }
 
         private string GetIpAddressLinux()
@@ -118,11 +122,6 @@ namespace CameraVideoRecorder.Camera
             pProcess.Start();
 
             return pProcess.StandardOutput.ReadToEnd();
-        }
-
-        public string GetCameraIp()
-        {
-            return _cameraIp;
         }
     }
 }

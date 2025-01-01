@@ -30,7 +30,7 @@ namespace CameraVideoRecorder.Ffmpeg
 
         public async Task<Process> StartRecordingAsync(CancellationToken token)
         {
-            string ipAddress = _cameraIpService.GetCameraIp();
+            string ipAddress = _cameraIpService.GetCameraIpAddress();
 
             string inputPath = _argumentProvider.Arguments[ArgumentConstants.FfmpegDirectoryPath];
             string inputFile = Path.Combine(inputPath, FfmpegExeName);

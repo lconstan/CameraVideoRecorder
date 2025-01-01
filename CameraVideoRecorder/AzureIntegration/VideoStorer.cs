@@ -1,21 +1,18 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
-using CameraVideoRecorder.Arguments;
 using Microsoft.Extensions.Logging;
 
 namespace CameraVideoRecorder.AzureIntegration
 {
     internal class VideoStorer : IVideoStorer
     {
-        private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly BlobServiceClient _blobServiceClient;
         private readonly ILogger<VideoStorer> _logger;
 
-        private static readonly TimeSpan _azureStorePeriod = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan AzureStorePeriod = TimeSpan.FromSeconds(10);
 
-        public VideoStorer(ICameraRecorderArgumentProvider argumentProvider, BlobServiceClient blobServiceClient, ILogger<VideoStorer> logger)
+        public VideoStorer(BlobServiceClient blobServiceClient, ILogger<VideoStorer> logger)
         {
-            _argumentProvider = argumentProvider;
             _blobServiceClient = blobServiceClient;
             _logger = logger;
         }
@@ -38,7 +35,7 @@ namespace CameraVideoRecorder.AzureIntegration
 
                 await memoryStream.WriteAsync(buffer, 0, bytesRead, ct);
 
-                if (DateTime.UtcNow - lastWriteUtc > _azureStorePeriod)
+                if (DateTime.UtcNow - lastWriteUtc > AzureStorePeriod)
                 {
                     await PushToAzureAsync(blobClient, memoryStream, ct);
 
@@ -58,7 +55,7 @@ namespace CameraVideoRecorder.AzureIntegration
         private static async Task<int> ReadStreamWithTimeoutAsync(Stream stream, byte[] buffer, CancellationToken ct)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(_azureStorePeriod);
+            cts.CancelAfter(AzureStorePeriod);
 
             try
             {

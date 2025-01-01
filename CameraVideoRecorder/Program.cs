@@ -2,12 +2,12 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using CameraVideoRecorder.Camera;
-using CameraVideoRecorder.Recording;
 using CameraVideoRecorder.Ffmpeg;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using CameraVideoRecorder.AzureIntegration;
 using Azure.Security.KeyVault.Secrets;
+using CameraVideoRecorder.HostedService;
 using Serilog;
 using Microsoft.Extensions.Logging;
 
