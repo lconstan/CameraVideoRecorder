@@ -79,7 +79,7 @@ namespace CameraVideoRecorder.AzureIntegration
 
         private async Task<AppendBlobClient> CreateNewBlobAsync(CancellationToken ct)
         {
-            string blobName = $"video_{DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss")}.ts";
+            string blobName = $"video_{DateTime.UtcNow:yyyy_MM_dd_HH_mm}.ts";
 
             BlobContainerClient blobContainerClient = _blobServiceClient.GetBlobContainerClient("videorecordercontainer");
 
