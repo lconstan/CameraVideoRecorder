@@ -8,13 +8,11 @@ namespace CameraVideoRecorder.Camera
 {
     internal class CameraIpService : ICameraIpService
     {
-        private readonly ICameraRecorderArgumentProvider _argumentProvider;
         private readonly ILogger<CameraIpService> _logger;
         private const string _cameraMacAddress = "04-17-b6-01-39-c5";
 
-        public CameraIpService(ICameraRecorderArgumentProvider argumentProvider, ILogger<CameraIpService> logger)
+        public CameraIpService(ILogger<CameraIpService> logger)
         {
-            _argumentProvider = argumentProvider;
             _logger = logger;
         }
 
@@ -77,6 +75,7 @@ namespace CameraVideoRecorder.Camera
 
         private string GetIpAddressWindows()
         {
+            // Bugged by design - We may not see the cam. To be used for testing purposes only
             string strOutput = RunProcessAndGetOutput("arp", "-a");
             using var sr = new StringReader(strOutput);
             string line;

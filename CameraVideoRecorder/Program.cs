@@ -9,7 +9,6 @@ using CameraVideoRecorder.AzureIntegration;
 using Azure.Security.KeyVault.Secrets;
 using CameraVideoRecorder.HostedService;
 using Serilog;
-using Microsoft.Extensions.Logging;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
@@ -25,8 +24,8 @@ builder.Services.AddSingleton<ISecretProvider, SecretProvider>();
 
 // DefaultAzureCredential will use environment variable
 // See https://learn.microsoft.com/en-us/dotnet/azure/sdk/authentication/on-premises-apps?tabs=azure-portal%2Cwindows%2Ccommand-line#3---configure-environment-variables-for-application
-builder.Services.AddSingleton(_ => new BlobServiceClient(new Uri("https://videorecorder.blob.core.windows.net"), new DefaultAzureCredential()));
-builder.Services.AddSingleton(_ => new SecretClient(new Uri("https://videorecorderkv.vault.azure.net/"), new DefaultAzureCredential()));
+builder.Services.AddSingleton(_ => new BlobServiceClient(new Uri("https://1234videorecording.blob.core.windows.net"), new DefaultAzureCredential()));
+builder.Services.AddSingleton(_ => new SecretClient(new Uri("https://videorecorderkv1234.vault.azure.net/"), new DefaultAzureCredential()));
 
 builder.Services.AddHostedService<CameraRecorderHostedService>();
 

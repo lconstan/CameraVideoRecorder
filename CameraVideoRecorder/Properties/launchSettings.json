@@ -2,7 +2,7 @@
   "profiles": {
     "CameraVideoRecorder": {
       "commandName": "Project",
-      "commandLineArgs": "FfmpegDirectoryPath=D:\\\\repo\\\\CameraVideoRecorder\\\\Dependencies LogPath=D:\\repo\\CameraVideoRecorder\\Logs"
+      "commandLineArgs": "FfmpegDirectoryPath=D:\\\\repos\\\\CameraVideoRecorder\\\\Dependencies LogPath=D:\\repos\\CameraVideoRecorder\\Logs"
     }
   }
 }
